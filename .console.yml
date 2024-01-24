@@ -1,0 +1,16 @@
+title: Console test
+usage: this is an example console application for demonstratino purposes
+commands:
+  - key: github
+    usage: Prints the github token from env
+    cmd: |
+      #!/bin/sh
+      echo $GITHUB_TOKEN
+  - key: uptime
+    usage: Prints the github token from env
+    cmd: uptime
+  - key: uname
+    usage: Prints the full uname string
+    cmd: |
+      #!/bin/sh
+      uname -a
