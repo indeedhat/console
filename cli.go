@@ -55,9 +55,7 @@ func (c CmdConfig) Run(args []string) error {
 
 	err = cmd.Run()
 	if err != nil {
-		if err, ok := err.(*exec.ExitError); ok {
-			os.Exit(err.ExitCode())
-		}
+		return err
 	}
 
 	return nil

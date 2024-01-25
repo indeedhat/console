@@ -4,6 +4,7 @@ import (
 	"flag"
 	"log"
 	"os"
+	"os/exec"
 
 	"github.com/posener/complete/v2"
 )
@@ -43,6 +44,11 @@ func main() {
 	}
 
 	if err := entry.Run(flag.Args()[1:]); err != nil {
-		log.Fatal(err)
+		if err, ok := err.(*exec.ExitError); ok {
+			log.Print(err)
+			os.Exit(err.ExitCode())
+		} else {
+			log.Fatal(err)
+		}
 	}
 }
