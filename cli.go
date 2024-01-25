@@ -10,6 +10,7 @@ import (
 	"text/tabwriter"
 
 	"github.com/fatih/color"
+	"github.com/posener/complete/v2"
 )
 
 type CmdConfig struct {
@@ -21,6 +22,10 @@ type CmdConfig struct {
 
 func (c CmdConfig) WorkingDir() string {
 	if c.WorkDir == "" {
+		if dir, err := os.Getwd(); err == nil {
+			return dir
+		}
+
 		return filepath.Dir(os.Args[0])
 	}
 
@@ -40,7 +45,7 @@ func (c CmdConfig) Run(args []string) error {
 	defer os.Remove(fh.Name())
 
 	fh.WriteString(c.Cmd)
-	args = append([]string{fh.Name()}, args...)
+	args = append([]string{filepath.Base(fh.Name())}, args...)
 
 	cmd := exec.Command(shell(), args...)
 	cmd.Dir = c.WorkingDir()
@@ -62,14 +67,24 @@ func (c CmdConfig) Run(args []string) error {
 type CliCommandEntries []CmdConfig
 
 // Find a command entry by its key
-func (ces CliCommandEntries) Find(key string) *CmdConfig {
-	for _, entry := range ces {
+func (c CliCommandEntries) Find(key string) *CmdConfig {
+	for _, entry := range c {
 		if key == entry.Key {
 			return &entry
 		}
 	}
 
 	return nil
+}
+
+func (c CliCommandEntries) Completions() map[string]*complete.Command {
+	completions := make(map[string]*complete.Command)
+
+	for _, entry := range c {
+		completions[entry.Key] = &complete.Command{}
+	}
+
+	return completions
 }
 
 // CliUsage generator for the flags lib
