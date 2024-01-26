@@ -18,6 +18,7 @@ type CmdConfig struct {
 	Usage   string `yaml:"usage"`
 	Cmd     string `yaml:"cmd"`
 	WorkDir string `yaml:"workDir"`
+	Prompt  bool   `yaml:"prompt"`
 }
 
 func (c CmdConfig) WorkingDir() string {
@@ -38,6 +39,12 @@ func (c CmdConfig) WorkingDir() string {
 }
 
 func (c CmdConfig) Run(args []string) error {
+	if c.Prompt {
+		if !cliPromptBool(fmt.Sprintf("Are you sure you want to run %s?", c.Key)) {
+			return nil
+		}
+	}
+
 	fh, err := os.CreateTemp(c.WorkingDir(), "run*.sh")
 	if err != nil {
 		return err
