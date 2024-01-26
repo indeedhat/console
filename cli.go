@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"strings"
 	"text/tabwriter"
+	"time"
 
 	"github.com/fatih/color"
 	"github.com/posener/complete/v2"
@@ -50,6 +51,11 @@ func (c CmdConfig) Run(args []string) error {
 		return err
 	}
 	defer os.Remove(fh.Name())
+
+	go func() {
+		time.Sleep(100 * time.Millisecond)
+		os.Remove(fh.Name())
+	}()
 
 	fh.WriteString(c.Cmd)
 	args = append([]string{filepath.Base(fh.Name())}, args...)
