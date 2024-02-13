@@ -24,10 +24,6 @@ type CmdConfig struct {
 
 func (c CmdConfig) WorkingDir() string {
 	if c.WorkDir == "" {
-		if dir, err := os.Getwd(); err == nil {
-			return dir
-		}
-
 		return filepath.Dir(os.Args[0])
 	}
 
@@ -46,19 +42,24 @@ func (c CmdConfig) Run(args []string) error {
 		}
 	}
 
-	fh, err := os.CreateTemp(c.WorkingDir(), "run*.sh")
-	if err != nil {
-		return err
+	if validShellScript(c.WorkingDir(), c.Cmd) {
+		args = append([]string{c.Cmd}, args...)
+	} else {
+
+		fh, err := os.CreateTemp(c.WorkingDir(), "run*.sh")
+		if err != nil {
+			return err
+		}
+		defer os.Remove(fh.Name())
+
+		go func() {
+			time.Sleep(100 * time.Millisecond)
+			os.Remove(fh.Name())
+		}()
+
+		fh.WriteString(c.Cmd)
+		args = append([]string{filepath.Base(fh.Name())}, args...)
 	}
-	defer os.Remove(fh.Name())
-
-	go func() {
-		time.Sleep(100 * time.Millisecond)
-		os.Remove(fh.Name())
-	}()
-
-	fh.WriteString(c.Cmd)
-	args = append([]string{filepath.Base(fh.Name())}, args...)
 
 	cmd := exec.Command(shell(), args...)
 	cmd.Dir = c.WorkingDir()
@@ -66,7 +67,7 @@ func (c CmdConfig) Run(args []string) error {
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 
-	err = cmd.Run()
+	err := cmd.Run()
 	if err != nil {
 		return err
 	}
@@ -157,4 +158,20 @@ func shell() string {
 	}
 
 	return "sh"
+}
+
+func validShellScript(wd, s string) bool {
+	if strings.Contains(s, "\n") {
+		return false
+	}
+
+	if !strings.HasSuffix(s, ".sh") {
+		return false
+	}
+
+	if !filepath.IsAbs(s) {
+		s = filepath.Join(wd, s)
+	}
+	_, err := os.Stat(s)
+	return err == nil
 }

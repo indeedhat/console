@@ -22,6 +22,8 @@ commands:
     usage: Prints the github token from env
     # the body of the shell script
     # this will be written to a file and then executed
+    # alternatively if a filepath is provided to a .sh file that file will be executed
+    # (file paths must be either absolute or relative to the console binary)
     cmd: |
       #!/bin/sh
       echo $GITHUB_TOKEN
