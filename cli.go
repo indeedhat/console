@@ -24,6 +24,9 @@ type CmdConfig struct {
 
 func (c CmdConfig) WorkingDir() string {
 	if c.WorkDir == "" {
+		if dir, err := os.Getwd(); err == nil {
+			return dir
+		}
 		return filepath.Dir(os.Args[0])
 	}
 
@@ -42,8 +45,8 @@ func (c CmdConfig) Run(args []string) error {
 		}
 	}
 
-	if validShellScript(c.WorkingDir(), c.Cmd) {
-		args = append([]string{c.Cmd}, args...)
+	if script, ok := validShellScript(c.Cmd); ok {
+		args = append([]string{script}, args...)
 	} else {
 
 		fh, err := os.CreateTemp(c.WorkingDir(), "run*.sh")
@@ -160,18 +163,27 @@ func shell() string {
 	return "sh"
 }
 
-func validShellScript(wd, s string) bool {
+func validShellScript(s string) (string, bool) {
 	if strings.Contains(s, "\n") {
-		return false
+		return s, false
 	}
 
 	if !strings.HasSuffix(s, ".sh") {
-		return false
+		return s, false
 	}
 
 	if !filepath.IsAbs(s) {
-		s = filepath.Join(wd, s)
+		s = filepath.Join(consoleBinDir(), s)
 	}
 	_, err := os.Stat(s)
-	return err == nil
+	return s, err == nil
+}
+
+func consoleBinDir() string {
+	dir := filepath.Dir(os.Args[0])
+	if dir, err := filepath.Abs(dir); err == nil {
+		return dir
+	}
+
+	return dir
 }
